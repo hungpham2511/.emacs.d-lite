@@ -96,12 +96,16 @@
   :after general
   :config
   (yas-global-mode 1)
+  (message "Yasnippet is loaded. Configuring key bindings.")
   (general-define-key
    :states '(normal visual insert)
-   "C-e" 'yas-expand
-   )
-  )
+   "C-c e" 'yas-expand
+   ))
 
+;; Collection of snippets
+(use-package yasnippet-snippets
+  :straight t
+  :after yasnippet)
 
 ;; Move auto-save files
 (use-package no-littering
