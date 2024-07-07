@@ -24,6 +24,12 @@ Development version ae8f815613c2 on HEAD branch; build date 2024-05-20.
 
 It should work fine an emacs version 27 and above.
 
+## Map Caps Lock to Control
+
+Strongly recommended to map the `Caps Lock` key to `Control` when you
+use emacs. This is because the `Control` key is used very frequently
+in emacs and you will save yourself a lot of finger strain by using
+the `Caps Lock` key instead.
 
 ## What's included?
 
@@ -38,3 +44,4 @@ It should work fine an emacs version 27 and above.
 Tip: Use `M-x` to search for commands. The keybindings for commands
 are also shown in the minibuffer that appears with `M-x` so you can
 remember what you need.
+
