@@ -40,6 +40,9 @@
 (setq user-use-company nil)              ; Use company for completion
 (setq user-use-corfu t)		         ; Use corfu for completion
 
+;; Disable copilot warning
+(with-eval-after-load 'copilot
+  (setq warning-suppress-types '((copilot))))
 ;; Auto-complete
 (use-package company
   :straight t
