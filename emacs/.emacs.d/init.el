@@ -296,12 +296,17 @@
   (add-hook 'org-mode-hook
 	    (lambda () (push '(?m . ("$" . "$")) evil-surround-pairs-alist))))
 
+(use-package hs-minor-mode
+  :hook (prog-mode . hs-minor-mode))
 
 ;; Co-pilot for code completion
 (use-package copilot
-  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+  :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
   :ensure t
   :hook (prog-mode . copilot-mode)
+  (markdown-mode . copilot-mode)
+  (yaml-mode . copilot-mode)
+
   :config 
 
   ;; This configuration allows using company-mode for completion with copilot.
@@ -318,7 +323,30 @@
    "TAB" 'copilot-accept-completion
    "C-l" 'copilot-accept-completion
    "C-w" 'copilot-accept-completion-by-word
+
+(use-package copilot-chat
+  :straight (copilot-chat :type git :host github :repo "chep/copilot-chat.el")
+  :config
+  (setq copilot-chat-frontend 'org)
+
+  (general-define-key
+   :states '(normal visual insert)
+   "C-c a" 'copilot-chat-transient
    ))
+
+;; use aidermacs
+(use-package aidermacs
+  :straight (:host github :repo "MatthewZMD/aidermacs" :files ("*.el"))
+  :bind (("C-c d" . aidermacs-transient-menu))
+  :config
+  :custom
+  ; See the Configuration section below
+  (aidermacs-use-architect-mode nil)
+  (aidermacs-default-model "sonnet")
+  (aidermacs-auto-commits t)
+  (aidermacs-show-diff-after-change nil)
+  )
+
 
 (use-package jenkinsfile-mode
   :straight t
@@ -333,7 +361,15 @@
   )
 
 (use-package markdown-mode
-  :straight t)
+  :straight t
+
+  :config
+  (general-define-key
+   :keymaps 'markdown-mode-map
+   :states '(normal visual insert)
+   "<tab>" 'markdown-cycle
+   )
+  )
 
 (use-package dockerfile-mode
   :straight t)
@@ -347,6 +383,11 @@
   (add-hook 'c-mode-common-hook 'google-set-c-style)
   (add-hook 'c-mode-common-hook 'google-make-newline-indent))
 
+;; super fast eglot
+(use-package eglot-booster
+  :after eglot
+  :straight (eglot-booster :type git :host github :repo "jdtsmith/eglot-booster" :files ("*.el"))
+  :config	(eglot-booster-mode))
 (defun python-occur-definitions ()
   "Display an occur buffer of all definitions in the current buffer.
 
@@ -360,6 +401,45 @@
 	(select-window window)
       (switch-to-buffer "*Occur*"))))
 
+(defun cpp-occur-definitions ()
+  "Display an occur buffer of all C++ definitions and important comments in the current buffer.
+Also, switch to that buffer."
+  (interactive)
+  (let ((list-matching-lines-face nil))
+    (occur (concat
+            "^[[:space:]]*\\("
+            "class[[:space:]]+[A-Za-z_][A-Za-z0-9_]*"  ; class definitions
+            "\\|struct[[:space:]]+[A-Za-z_][A-Za-z0-9_]*"  ; struct definitions
+            "\\|enum[[:space:]]+[A-Za-z_][A-Za-z0-9_]*"    ; enum definitions
+            "\\|template[[:space:]]*<"                      ; template definitions
+            "\\|namespace[[:space:]]+[A-Za-z_][A-Za-z0-9_]*" ; namespace definitions
+            "\\|[A-Za-z_][A-Za-z0-9_:]+[[:space:]]+[A-Za-z_][A-Za-z0-9_:]+("      ; function definitions
+            "\\|[A-Za-z_][A-Za-z0-9_:]+("      ; function definitions: c()
+            "\\|#define[[:space:]]+[A-Za-z_][A-Za-z0-9_]*" ; macro definitions
+            "\\|//[[:space:]]*\\(TODO\\|FIXME\\|NOTE\\)"   ; important comments
+            "\\)")))
+  (let ((window (get-buffer-window "*Occur*")))
+    (if window
+        (select-window window)
+      (switch-to-buffer "*Occur*"))))
+
+(defun save-image-from-clipboard-and-insert-link (filename)
+  "Saves an image from the clipboard to the specified FILENAME and inserts a link to it."
+  (interactive "FSave image as: ")
+  ;; Get current buffer directory
+  (let (
+	(file-dir (file-name-directory (buffer-file-name)))
+	(relative-path (file-relative-name filename (file-name-directory (buffer-file-name))))
+	)
+    (message "Saving image to %s" (concat file-dir relative-path))
+    ;; (shell-command (format "timeout 0.5 xclip -selection clipboard -t image/png -o > %s" (concat file-dir relative-path)))
+    ;; check shell command return code
+    (if (zerop (shell-command (format "timeout 0.5 xclip -selection clipboard -t image/png -o > %s" (concat file-dir relative-path))))
+	(insert (format "![](%s)" relative-path))
+      (message "No image in clipboard")
+      ))
+  )
+
 (general-define-key
  :keymaps 'python-mode-map
  :state '(motion visual normal insert)
@@ -367,23 +447,15 @@
  )
 
 (general-define-key
+ :keymaps 'c++-mode-map
+ :state '(motion visual normal insert)
+ "C-c C-o" 'cpp-occur-definitions
+ )
+
+(general-define-key
  "C-c f f" 'eglot
  "C-c q" 'save-buffers-kill-terminal
  )
-
-;; Experimental part
-(use-package go-translate
-  :straight t
-  :after posframe
-  :config
-  (setq gts-translate-list '(("zh" "en")))
-  (setq gts-default-translator
-	(gts-translator
-	 :picker (gts-prompt-picker)
-	 :engines (list (gts-google-engine))
-	 :render (gts-buffer-render)
-	 )))
-
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
